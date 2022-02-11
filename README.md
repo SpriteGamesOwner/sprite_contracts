@@ -1,1 +1,2 @@
 # sprite_contracts
+SpriteContracts
