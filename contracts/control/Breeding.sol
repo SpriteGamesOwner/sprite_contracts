@@ -27,6 +27,7 @@ contract Breeding is Base {
         _spriteCoreAddress = spriteCoreAddress;
         _moneyCoreAddress = moneyCoreAddress;
 
+        //初始化繁殖费用表
         breedingPriceTable[0] = [750 * 10 ** 18, 1 * 10 ** 18];
         breedingPriceTable[1] = [1250 * 10 ** 18, 2 * 10 ** 18];
         breedingPriceTable[2] = [2000 * 10 ** 18, 4 * 10 ** 18];
@@ -39,23 +40,7 @@ contract Breeding is Base {
     function moveOwner(address to) external onlyOwner isExternal(to) {
         transferOwnership(to);
     }
-
-    function pause() public onlyOwner whenNotPaused {
-        _pause();
-    }
-
-    function unpause() public onlyOwner whenPaused {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, amount);
-    }
-
+    
     function setSignServerAddress(address account) external onlyOwner isExternal(account) {
         _signServerAddress = account;
     }
@@ -68,7 +53,7 @@ contract Breeding is Base {
         breedingPriceTable[breedingCount] = prices;
     }
 
-    function breed(uint256 fatherId, uint256 motherId, uint256 timestamp, bytes memory sign) external {
+    function breed(uint256 fatherCount, uint256 motherCount, uint256 fatherId, uint256 motherId, uint256 timestamp, bytes memory sign) external {
         if (!IFairyCtrl(_fairyCtrlAddress).isOwns(msg.sender, fatherId)) {
             revert("Breed fairy failed, reason: invalid father id");
         }
@@ -77,28 +62,36 @@ contract Breeding is Base {
             revert("Breed fairy failed, reason: invalid mother id");
         }
 
-        bytes memory message = abi.encodePacked(Utils.addressToUint256(msg.sender), fatherId, motherId, timestamp);
+        bytes memory message = abi.encodePacked(Utils.addressToUint256(msg.sender), fatherCount, motherCount, fatherId, motherId, timestamp);
         if (!Utils.validSign(_signServerAddress, message, sign)) {
             revert("Breed fairy failed, reason: invalid signature");
         }
 
         uint256 fatherBreedingCount = IFairyCtrl(_fairyCtrlAddress).currentBreedingCount(fatherId);
+        if (fatherBreedingCount != fatherCount) {
+            revert("Breed fairy failed, reason: not match breeding count");
+        }
         if (fatherBreedingCount > 6) {
             revert("Breed fairy failed, reason: out of breeding");
         }
 
         uint256 motherBreedingCount = IFairyCtrl(_fairyCtrlAddress).currentBreedingCount(motherId);
+        if (motherBreedingCount != motherCount) {
+            revert("Breed fairy failed, reason: not match breeding count");
+        }
         if (motherBreedingCount > 6) {
             revert("Breed fairy failed, reason: out of breeding");
         }
 
+        //根据配置对繁殖进行收费
         uint256 fatherMoneyAmount = breedingPriceTable[fatherBreedingCount][0];
         uint256 fatherSpriteAmount = breedingPriceTable[fatherBreedingCount][1];
         uint256 motherMoneyAmount = breedingPriceTable[motherBreedingCount][0];
         uint256 motherSpriteAmount = breedingPriceTable[motherBreedingCount][1];
-        IERC20(_moneyCoreAddress).safeTransferFrom(msg.sender, address(owner()), fatherMoneyAmount + motherMoneyAmount);
-        IERC20(_spriteCoreAddress).safeTransferFrom(msg.sender, address(owner()), fatherSpriteAmount + motherSpriteAmount);
+        IERC20(_moneyCoreAddress).safeTransferFrom(msg.sender, address(getTokensOwner()), fatherMoneyAmount + motherMoneyAmount);
+        IERC20(_spriteCoreAddress).safeTransferFrom(msg.sender, address(getTokensOwner()), fatherSpriteAmount + motherSpriteAmount);
 
+        //铸造一个下一代的Fairy，并转账给繁殖者
         IFairyCtrl(_fairyCtrlAddress).breedFairy(msg.sender, fatherId, motherId, 0);
     }
 

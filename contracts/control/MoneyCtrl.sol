@@ -28,28 +28,12 @@ contract MoneyCtrl is Base {
     function moveOwner(address to) external onlyOwner isExternal(to) {
         transferOwnership(to);
     }
-
-    function pause() public onlyOwner whenNotPaused {
-        _pause();
-    }
-
-    function unpause() public onlyOwner whenPaused {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, amount);
-    }
-
+    
     function setSignServerAddress(address account) external onlyOwner isExternal(account) {
         _signServerAddress = account;
     }
 
-    function ownerWithDraw(address to, uint256 amount) external onlyOwner isExternal(to) {
+    function ownerWithDraw(address to, uint256 amount) external onlyRole(MANAGER_ROLE) isExternal(to) {
         uint256 number = amount * 10 ** 18;
         if (number == 0) {
             revert("Withdraw sprite failed, reason: invalid withdraw amount");
@@ -86,6 +70,6 @@ contract MoneyCtrl is Base {
     }
 
     function currentBalance() private view returns (uint256) {
-        return IERC20(_moneyCoreAddress).balanceOf(owner());
+        return IERC20(_moneyCoreAddress).balanceOf(getTokensOwner());
     }
 }

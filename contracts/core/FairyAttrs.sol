@@ -25,28 +25,11 @@ contract FairyAttrs is Base, IFairyAttrs {
     function moveOwner(address to) external onlyOwner isExternal(to) {
         transferOwnership(to);
     }
-
-    function pause() external onlyOwner whenNotPaused {
-        _pause();
-    }
-
-    function unpause() external onlyOwner whenPaused {
-        _unpause();
-    }
-
     function getAttr(uint256 tokenId, uint256 index) external view isContract(msg.sender) returns (uint256) {
         return fairyAttrsTable[tokenId][index];
     }
 
     function setAttr(uint256 tokenId, uint256 index, uint256 value) external onlyRole(CONTROL_ROLE) {
         fairyAttrsTable[tokenId][index] = value;
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, amount);
     }
 }

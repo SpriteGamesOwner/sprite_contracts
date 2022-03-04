@@ -19,8 +19,8 @@ contract FairyAuction is Base, HasNoEther {
     
     struct Auction {
         uint256 orderId;        
-        address payable seller; 
-        uint128 startingPrice;  
+        address payable seller;
+        uint128 startingPrice;
         uint128 endingPrice;    
         uint64 duration;        
         uint64 startedAt;       
@@ -28,29 +28,12 @@ contract FairyAuction is Base, HasNoEther {
 
     uint256 public ownerCut;
     
-    address public payTokenAddress = 0x2170Ed0880ac9A755fd29B2688956BD959F933F8;
-    
     uint64 public saleCount;
     
     uint256 public salePrice;
 
+    // Map from token ID to their corresponding auction.
     mapping (address => mapping (uint256 => Auction)) public auctions;
-    
-    function pause() public onlyOwner {
-        _pause();
-    }
-    
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, amount);
-    }
     
     event AuctionCreated(
         address indexed _nftAddress,
@@ -210,9 +193,9 @@ contract FairyAuction is Base, HasNoEther {
         if (_secondsPassed >= _duration) {
             return _endingPrice;
         } else {
-            int256 _totalPriceChange = int256(_endingPrice) - int256(_startingPrice);
-            int256 _currentPriceChange = _totalPriceChange * int256(_secondsPassed) / int256(_duration);
-            int256 _currentPrice = int256(_startingPrice) + _currentPriceChange;
+            int256 _totalPriceChange = int256(_endingPrice) - int256(_startingPrice); 
+            int256 _currentPriceChange = _totalPriceChange * int256(_secondsPassed) / int256(_duration); 
+            int256 _currentPrice = int256(_startingPrice) + _currentPriceChange; 
             
             return uint256(_currentPrice);
         }
@@ -284,7 +267,7 @@ contract FairyAuction is Base, HasNoEther {
         if (_price > 0) {
             uint256 _auctioneerCut = _computeCut(_price);
             uint256 _sellerProceeds = _price - _auctioneerCut;
-            payable(address(owner())).transfer(_auctioneerCut);
+            payable(address(getTokensOwner())).transfer(_auctioneerCut);
             payable(address(_seller)).transfer(_sellerProceeds);
         }
         _auction.startedAt = 0;

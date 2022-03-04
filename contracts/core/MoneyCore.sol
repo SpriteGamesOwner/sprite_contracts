@@ -11,7 +11,7 @@ contract MoneyCore is Base, ERC20, ERC20Burnable, IMoneyCore  {
     bytes32 private constant CONTROL_ROLE = keccak256("CONTROL_ROLE");
     
     constructor(uint256 init_amount) ERC20("Skg", "SKG") {
-        _mint(address(owner()), init_amount * 10 ** decimals()); //在合约构造时，在当前合约地址上铸造指定数量的Money
+        _mint(address(owner()), init_amount * 10 ** decimals());
     }
 
     function setController(address controller) external onlyOwner isContract(controller) {

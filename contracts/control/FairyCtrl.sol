@@ -25,11 +25,11 @@ contract FairyCtrl is Base, IFairyCtrl {
     
     string private _tokenURIPrefix = "https://storage.googleapis.com/sprite-kingdom/";
     
-    string private _tokenURISuffix = "/sprite-kingdom.json";
+    string private _tokenURISuffix = "/description.json";
 
     event FairyLevelup(uint256 mainId, uint256 burnId, uint256 currentLevel);
 
-    event FairyBreeding(address indexed owner, uint256 fatherId, uint256 motherId, uint256 indexed childId, uint256 level);
+    event FairyBreeding(address indexed owner, uint256 fatherCount, uint256 motherCount, uint256 fatherId, uint256 motherId, uint256 indexed childId, uint256 level);
 
     constructor(address fairyCoreAddress, address fairyAttrsAddress) isContract(fairyCoreAddress) {
         _fairyCoreAddress = fairyCoreAddress;
@@ -43,23 +43,7 @@ contract FairyCtrl is Base, IFairyCtrl {
     function moveOwner(address to) external onlyOwner isExternal(to) {
         transferOwnership(to);
     }
-
-    function pause() external onlyOwner whenNotPaused {
-        _pause();
-    }
-
-    function unpause() external onlyOwner whenPaused {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
-        super._beforeTokenTransfer(from, to, amount);
-    }
-
+    
     function setTokenURIPrefix(string memory tokenURIPrefix) external onlyOwner {
         _tokenURIPrefix = tokenURIPrefix;
     }
@@ -116,13 +100,15 @@ contract FairyCtrl is Base, IFairyCtrl {
 
         uint256 fatherBreedingCount = IFairyAttrs(_fairyAttrsAddress).getAttr(fatherId, 2);
         uint256 motherBreedingCount = IFairyAttrs(_fairyAttrsAddress).getAttr(motherId, 2);
-        IFairyAttrs(_fairyAttrsAddress).setAttr(fatherId, 2, fatherBreedingCount + 1);
-        IFairyAttrs(_fairyAttrsAddress).setAttr(motherId, 2, motherBreedingCount + 1);
+        uint256 newFatherBreedingCount = fatherBreedingCount + 1;
+        uint256 newMotherBreedingCount = motherBreedingCount + 1;
+        IFairyAttrs(_fairyAttrsAddress).setAttr(fatherId, 2, newFatherBreedingCount);
+        IFairyAttrs(_fairyAttrsAddress).setAttr(motherId, 2, newMotherBreedingCount);
 
         IFairyAttrs(_fairyAttrsAddress).setAttr(tokenId, 0, fatherId);
         IFairyAttrs(_fairyAttrsAddress).setAttr(tokenId, 1, motherId);
 
-        emit FairyBreeding(to, fatherId, motherId, tokenId, level);
+        emit FairyBreeding(to, newFatherBreedingCount, newMotherBreedingCount, fatherId, motherId, tokenId, level);
 
         return tokenId;
     }
